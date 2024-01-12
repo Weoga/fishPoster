@@ -4,6 +4,10 @@ import json
 from telebot.util import extract_arguments
 from prawcore.exceptions import Redirect
 import re
+import logging  # logger ¯\_(ツ)_/¯
+
+logging.basicConfig(filename='./reports.log', level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)s: %(message)s')  # logger config
 
 with open('login.json') as f:
 	login = json.load(f)
@@ -34,8 +38,9 @@ def start(message):
 	if not message.chat.id == 1397541766:
 		bot.send_message(message.chat.id, "Access denied")
 		return
-	print(message.chat.id)
 	bot.send_message(message.chat.id, 'hi mom')
+	logging.info(f"{message.chat.username} sent a {message.text}")
+	print(f"{message.date} {message.chat.username} sent a {message.text}")
 
 
 FLAG_confirm_post = False
@@ -116,5 +121,11 @@ def changetitle(message):
 	post_title = new_title
 	send_post(message.chat.id, post_img, post_title)
 
+
 if __name__ == '__main__':
-	bot.polling()
+	logging.info('STARTING')
+	try:
+		bot.polling()
+	except Exception as _e:
+		logging.error(_e)
+		print(_e.__str__())
