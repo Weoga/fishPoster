@@ -51,7 +51,7 @@ post_img = None
 post_title = None
 
 
-@bot.message_handler(commands=['newpost'])
+@bot.message_handler(commands=['newpost', 'np', 'n'])
 def newpost(message):
 	if not message.chat.id == 1397541766:
 		bot.send_message(message.chat.id, "Access denied")
@@ -117,7 +117,7 @@ def changesub(message):
 	bot.send_message(message.chat.id, f"Changed to r/{sub}, boss")
 
 
-@bot.message_handler(commands=['changetitle'])
+@bot.message_handler(commands=['changetitle', 'ct'])
 def changetitle(message):
 	if not message.chat.id == 1397541766:
 		bot.send_message(message.chat.id, "Access denied")
