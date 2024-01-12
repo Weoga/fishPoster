@@ -2,7 +2,7 @@ import telebot
 import praw
 from json import load
 from telebot.util import extract_arguments
-from prawcore.exceptions import Redirect
+from prawcore.exceptions import Redirect, NotFound
 import re
 import logging  # logger ¯\_(ツ)_/¯
 from sys import stdout
@@ -81,13 +81,31 @@ def send_post(chat_id, image_link, title):
 		bot.send_photo(chat_id=chat_id, photo=image_link, caption=title)
 
 
+@bot.message_handler(content_types=['photo'])
+def custom_post(message):
+	if not message.chat.id == 1397541766:
+		bot.send_message(message.chat.id, "Access denied")
+		return
+	global post_img, post_title, FLAG_confirm_post
+	file_id = message.photo[-1].file_id
+	post_img = file_id
+	caption = message.caption
+	if caption:
+		post_title = caption
+		send_post(message.chat.id, image_link=file_id, title=caption)
+	else:
+		bot.send_message(message.chat.id, "now input the caption")
+	FLAG_confirm_post = True
+
+
 @bot.message_handler(regexp='^y$')
 def confirm_post(message):
 	if not message.chat.id == 1397541766:
 		bot.send_message(message.chat.id, "Access denied")
 		return
 	global FLAG_confirm_post, post_img, post_title, index
-	if not FLAG_confirm_post: return
+	if not FLAG_confirm_post:
+		return
 	FLAG_confirm_post = False
 	image_link = post_img
 	title = post_title
@@ -107,7 +125,8 @@ def changesub(message):
 		hot = subreddit.new()
 		for post in hot:
 			break
-	except Redirect:
+	except (Redirect, NotFound, ValueError) as _e:
+		logging.error(f"{_e}, couldn't find sub")
 		bot.send_message(message.chat.id, "Unable to find this sub")
 		return
 	subreddit_name = sub
@@ -124,16 +143,18 @@ def changetitle(message):
 		bot.send_message(message.chat.id, "Access denied")
 		return
 	global FLAG_confirm_post, post_title
-	if not FLAG_confirm_post: return
-	new_title = re.search('(/\\w*)\\s(.*)', message.text).group(2)
-	post_title = new_title
-	send_post(message.chat.id, post_img, post_title)
-
+	if not FLAG_confirm_post:
+		return
+	try:
+		new_title = re.search('(/\\w*)\\s(.*)', message.text).group(2)
+		post_title = new_title
+		send_post(message.chat.id, post_img, post_title)
+	except ValueError:
+		pass
 
 if __name__ == '__main__':
 	logging.info('STARTING')
 	try:
 		bot.polling()
 	except Exception as _e:
-		logging.error(_e)
-		print(_e.__str__())
+		logging.error(f"{type(_e).__name__} - {_e}")
