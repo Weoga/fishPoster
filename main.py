@@ -13,18 +13,23 @@ logging.basicConfig(handlers=[logging.FileHandler("./reports.log"), logging.Stre
 
 with open('login.json') as f:
 	login = load(f)
+	reddit = praw.Reddit(
+		client_id=login['client_id'],
+		client_secret=login['client_secret'],
+		redirect_uri=login['redirect_uri'],
+		user_agent=login['user_agent'],
+		username=login['username']
+	)
+	bot = telebot.TeleBot(login['tg_id'])
+	channel_id = login["tg_channel"]
 
-reddit = praw.Reddit(
-	client_id=login['client_id'],
-	client_secret=login['client_secret'],
-	redirect_uri=login['redirect_uri'],
-	user_agent=login['user_agent'],
-	username=login['username']
-)
-bot = telebot.TeleBot(login['tg_id'])
-with open('subreddit.txt', 'r') as f:
-	subreddit_name = f.read()
-channel_id = "@hnshgd"
+try:
+	with open('subreddit.txt', 'r') as f:
+		subreddit_name = f.read()
+except FileNotFoundError:
+	with open('subreddit.txt', 'w') as f:
+		subreddit_name = 'cats'
+		f.write(subreddit_name)
 
 
 @bot.message_handler(commands=['imfish'])
@@ -123,10 +128,10 @@ def changesub(message):
 	try:
 		subreddit = reddit.subreddit(sub)
 		hot = subreddit.new()
-		for post in hot:
+		for _ in hot:
 			break
-	except (Redirect, NotFound, ValueError) as _e:
-		logging.error(f"{_e}, couldn't find sub")
+	except (Redirect, NotFound, ValueError) as e:
+		logging.error(f"{e}, couldn't find sub")
 		bot.send_message(message.chat.id, "Unable to find this sub")
 		return
 	subreddit_name = sub
@@ -151,6 +156,14 @@ def changetitle(message):
 		send_post(message.chat.id, post_img, post_title)
 	except ValueError:
 		pass
+
+
+@bot.message_handler(commands=['whichsub'])
+def whichsub(message):
+	with open('subreddit.txt', 'r') as file:
+		subreddit = file.read()
+		bot.send_message(message.chat.id, f"we're on r/{subreddit}")
+
 
 if __name__ == '__main__':
 	logging.info('STARTING')
