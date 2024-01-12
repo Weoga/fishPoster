@@ -114,6 +114,7 @@ def changesub(message):
 	index = 0
 	with open('subreddit.txt', 'w') as output_f:
 		output_f.write(sub)
+	logging.info(f'contents of subreddit.txt changed to {sub}')
 	bot.send_message(message.chat.id, f"Changed to r/{sub}, boss")
 
 
