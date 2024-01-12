@@ -1,16 +1,18 @@
 import telebot
 import praw
-import json
+from json import load
 from telebot.util import extract_arguments
 from prawcore.exceptions import Redirect
 import re
 import logging  # logger ¯\_(ツ)_/¯
+from sys import stdout
 
-logging.basicConfig(filename='./reports.log', level=logging.DEBUG,
+logging.basicConfig(handlers=[logging.FileHandler("./reports.log"), logging.StreamHandler(stdout)], level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s: %(message)s')  # logger config
+#
 
 with open('login.json') as f:
-	login = json.load(f)
+	login = load(f)
 
 reddit = praw.Reddit(
 	client_id=login['client_id'],
@@ -48,6 +50,7 @@ index = 0
 post_img = None
 post_title = None
 
+
 @bot.message_handler(commands=['newpost'])
 def newpost(message):
 	if not message.chat.id == 1397541766:
@@ -60,7 +63,7 @@ def newpost(message):
 	for post in hot:
 		i = i + 1
 		print(f"i={i}, index={index}")
-		if i < index+1:
+		if i < index + 1:
 			continue
 		image_link = post.url if ('.png' in post.url or '.jpg' in post.url or '.jpeg' in post.url) else None
 		if image_link:
@@ -71,10 +74,13 @@ def newpost(message):
 			index = i
 			break
 	FLAG_confirm_post = True
-	
+
+
 def send_post(chat_id, image_link, title):
 	if image_link and title:
 		bot.send_photo(chat_id=chat_id, photo=image_link, caption=title)
+
+
 @bot.message_handler(regexp='^y$')
 def confirm_post(message):
 	if not message.chat.id == 1397541766:
@@ -109,6 +115,7 @@ def changesub(message):
 	with open('subreddit.txt', 'w') as output_f:
 		output_f.write(sub)
 	bot.send_message(message.chat.id, f"Changed to r/{sub}, boss")
+
 
 @bot.message_handler(commands=['changetitle'])
 def changetitle(message):
